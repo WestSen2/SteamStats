@@ -15,6 +15,14 @@ PERSONA_STATES = {
     6: "Looking to Play",
 }
 
+COMMUNITY_VISIBILITY = {
+    1: "Private",
+    2: "Friends Only",
+    3: "Friends of Friends",
+    4: "Users Only",
+    5: "Public",
+}
+
 STEAM_ID = "76561199077231505"  # numeric SteamID
 
 # --- FUNCTIONS ---
@@ -30,12 +38,19 @@ def get_player_summary(steam_id):
         "status": player['personastate'],
         "profile_url": player['profileurl'],
         "steamid": player['steamid'],
+        "raw": player,
     }
 
 
 def format_last_played(timestamp):
     if not timestamp:
         return "Never"
+    return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def format_timestamp(timestamp):
+    if not timestamp:
+        return "Unknown"
     return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M UTC")
 
 
@@ -53,6 +68,11 @@ def get_owned_games(steam_id):
             "hours": round(game.get('playtime_forever', 0) / 60, 1),
             "two_weeks": round(game.get('playtime_2weeks', 0) / 60, 1),
             "last_played": format_last_played(game.get('rtime_last_played')),
+            "windows_hours": round(game.get('playtime_windows_forever', 0) / 60, 1),
+            "mac_hours": round(game.get('playtime_mac_forever', 0) / 60, 1),
+            "linux_hours": round(game.get('playtime_linux_forever', 0) / 60, 1),
+            "has_stats": game.get('has_community_visible_stats', False),
+            "raw": game,
         }
         for game in games
     ]
@@ -77,7 +97,8 @@ def get_players_summaries(steam_ids):
             "steamid": player['steamid'],
             "name": player['personaname'],
             "status": player['personastate'],
-            "profile_url": player['profileurl']
+            "profile_url": player['profileurl'],
+            "raw": player,
         }
         for player in players
     ]
@@ -85,6 +106,10 @@ def get_players_summaries(steam_ids):
 
 def describe_status(persona_state):
     return PERSONA_STATES.get(persona_state, "Unknown")
+
+
+def describe_visibility(state):
+    return COMMUNITY_VISIBILITY.get(state, "Unknown")
 
 
 def sort_games_by_hours(games):
